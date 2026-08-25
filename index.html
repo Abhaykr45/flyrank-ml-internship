@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Content Refresh Decision Support — Abhay Kumar</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.7;
+      max-width: 1000px;
+      margin: auto;
+      padding: 40px 20px;
+      color: #222;
+      background: #f7f7f7;
+    }
+
+    article {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+    }
+
+    h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin-top: 45px;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      margin-top: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+
+    code {
+      background: #f1f1f1;
+      padding: 3px 6px;
+      border-radius: 4px;
+    }
+
+    .meta {
+      color: #666;
+    }
+
+    .highlight {
+      padding: 15px;
+      background: #f5f5f5;
+      border-left: 4px solid #555;
+      margin: 20px 0;
+    }
+
+    footer {
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      color: #666;
+    }
+  </style>
+</head>
+
+<body>
+
+<article>
+
+<h1>Content Refresh Decision Support</h1>
+
+<p class="meta">
+<strong>Author:</strong> Abhay Kumar<br>
+<strong>Lane:</strong> Content Refresh / Content Opportunity Scoring<br>
+<strong>Date:</strong> August 25, 2026
+</p>
+
+<div class="highlight">
+<strong>Research question:</strong>
+Can structured content and search-performance signals provide useful
+directional support for prioritizing content that may warrant human review?
+</div>
+
+<h2>Abstract</h2>
+
+<p>
+This project evaluates whether structured content and search-performance
+signals can provide directional decision support for prioritizing content
+review. A Random Forest classifier was trained using nine observable
+features and the target <code>trend_direction</code>. Under the original
+random split, the model measured an accuracy of approximately 0.632,
+compared with approximately 0.600 for the majority-class baseline.
+A client-grouped validation produced a lower measured accuracy of
+approximately 0.584, providing a more cautious view of generalization to
+unseen clients. The resulting workflow is therefore presented as a
+human-reviewed decision-support tool rather than an automatic content
+decision system.
+</p>
+
+<h2>1. Problem Framing</h2>
+
+<p>
+The goal is to prioritize content observations that may warrant human
+review. The unit of analysis is an individual content observation associated
+with a pseudonymous client identifier.
+</p>
+
+<p>
+The model produces a predicted trend category and confidence information.
+These outputs are converted into recommendations such as
+<code>PERFORMANCE_REVIEW</code> and <code>MONITOR</code>.
+</p>
+
+<p>
+A reviewer can use these recommendations to investigate content and decide
+whether further action is appropriate. The system does not automatically
+rewrite, publish, or delete content.
+</p>
+
+<h2>2. Data</h2>
+
+<p>
+The analysis used the anonymized FlyRank ML Internship content-refresh
+dataset containing 30,000 rows and 44 columns.
+After selecting the modeling fields and removing incomplete modeling
+observations, 20,018 rows were used.
+</p>
+
+<h3>Features</h3>
+
+<ul>
+<li>search_volume</li>
+<li>competition</li>
+<li>cpc</li>
+<li>word_count</li>
+<li>char_count</li>
+<li>content_age_days</li>
+<li>days_since_last_update</li>
+<li>ctr</li>
+<li>avg_position</li>
+</ul>
+
+<p>
+The target <code>trend_direction</code> was excluded from the feature set.
+Label-derived fields such as <code>trend_pct</code> were also excluded.
+The pseudonymous <code>client_id</code> was used only for grouped validation
+and was not used as a predictive feature.
+</p>
+
+<h2>3. Methodology</h2>
+
+<p>
+A Random Forest Classifier with 100 trees and random seed 42 was selected.
+Random Forest was chosen because it can model non-linear relationships and
+interactions among structured features.
+</p>
+
+<p>
+The original Week-5 evaluation used an 80/20 stratified random split.
+Week 6 introduced a client-grouped validation design so that complete
+clients were separated between training and testing.
+</p>
+
+<p>
+The grouped validation contained 23 training clients and 6 testing clients,
+with zero client overlap.
+</p>
+
+<h2>4. Results</h2>
+
+<table>
+<tr>
+<th>Validation design</th>
+<th>Random Forest accuracy</th>
+</tr>
+
+<tr>
+<td>Week-5 Random Split</td>
+<td>0.632368</td>
+</tr>
+
+<tr>
+<td>Week-6 Client-Grouped Split</td>
+<td>0.583968</td>
+</tr>
+</table>
+
+<p>
+Under the original random split, the majority-class baseline measured
+approximately 0.600150 accuracy while the Random Forest measured
+approximately 0.632368.
+</p>
+
+<p>
+The lower client-grouped result suggests that the random-split result may
+be optimistic when observations from the same client can occur in both
+training and testing data.
+</p>
+
+<h2>5. Leakage Audit</h2>
+
+<p>
+A feature-level leakage audit was performed. Most selected features were
+assessed as low leakage risk because they represent observable content or
+market signals.
+</p>
+
+<p>
+<code>ctr</code> and <code>avg_position</code> were identified as potential
+timing risks. Their validity depends on whether their measurement window
+occurs before the outcome represented by the target.
+</p>
+
+<p>
+This timing should be verified before any production use.
+</p>
+
+<h2>6. Interpretation</h2>
+
+<p>
+The model uses multiple observed content and performance signals to identify
+directional patterns. Signals such as content age, time since last update,
+CTR, and average position can contribute to prioritization.
+</p>
+
+<p>
+The difference between the random-split and client-grouped results is an
+important limitation. The measured accuracy decreased from approximately
+0.632 to approximately 0.584 under client-grouped validation.
+</p>
+
+<p>
+These observations do not establish causal relationships. They should be
+interpreted as measured associations within the evaluated dataset.
+</p>
+
+<h2>7. Ranked Recommendations</h2>
+
+<p>
+The action playbook produced 5,776 recommendation rows.
+</p>
+
+<table>
+<tr>
+<th>Recommended action</th>
+<th>Count</th>
+</tr>
+
+<tr>
+<td>PERFORMANCE_REVIEW</td>
+<td>3,828</td>
+</tr>
+
+<tr>
+<td>MONITOR</td>
+<td>1,948</td>
+</tr>
+</table>
+
+<h3>Performance Review</h3>
+
+<p>
+Items assigned <code>PERFORMANCE_REVIEW</code> show observed performance
+signals such as lower CTR or weaker average position. A reviewer should
+verify these signals and inspect the content before taking action.
+</p>
+
+<h3>Monitor</h3>
+
+<p>
+Items assigned <code>MONITOR</code> did not meet the current rules for a
+higher review priority. Monitoring does not guarantee good performance;
+it indicates only that the current signals did not justify higher priority.
+</p>
+
+<h3>Human review and no-go cases</h3>
+
+<ul>
+<li>Do not automatically publish content.</li>
+<li>Do not automatically delete content.</li>
+<li>Do not automatically rewrite content.</li>
+<li>Do not treat predictions as guaranteed outcomes.</li>
+<li>Do not make high-impact editorial decisions without human review.</li>
+</ul>
+
+<h2>8. Limitations</h2>
+
+<ul>
+<li>The model is evaluated on an anonymized dataset.</li>
+<li>Client-grouped validation produced lower accuracy than the random split.</li>
+<li>CTR and average-position timing should be verified carefully.</li>
+<li>The model does not establish causal effects.</li>
+<li>The recommendations are directional rather than guaranteed.</li>
+<li>The workflow is a research prototype, not a production decision system.</li>
+</ul>
+
+<h2>9. Reproducibility</h2>
+
+<p>
+The analysis notebooks are available in the project repository.
+</p>
+
+<p>
+<a href="https://github.com/Abhaykr45/flyrank-ml-internship">
+View the GitHub repository
+</a>
+</p>
+
+<p>
+Main notebook:
+<code>work/notebooks/capstone.ipynb</code>
+</p>
+
+<h2>Acknowledgments &amp; Data Credit</h2>
+
+<p>
+Built on the FlyRank ML Internship dataset.
+</p>
+
+<p>
+<a href="https://flyrank.ai">
+FlyRank
+</a>
+</p>
+
+<footer>
+<p>
+This research artifact uses cautious language including observed,
+measured, directional, and decision-support. It does not make causal
+claims or claim to predict a search engine's algorithm.
+</p>
+</footer>
+
+</article>
+
+</body>
+</html>
