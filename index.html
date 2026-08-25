@@ -99,6 +99,21 @@ directional support for prioritizing content that may warrant human review?
 </div>
 
 <h2>Abstract</h2>
+  <p>
+    Content teams can manage many pages at once, making it difficult to decide
+    which pages deserve review first when search performance changes. This
+    project studies that content-refresh prioritization problem using the
+    anonymized FlyRank ML Internship dataset. A Random Forest classifier was
+    trained on nine structured content and search-performance signals to predict
+    <code>trend_direction</code> and support prioritization for human review.
+    The model measured approximately 0.632 accuracy under the original random
+    split, compared with approximately 0.600 for the majority-class baseline,
+    while client-grouped validation produced a lower accuracy of approximately
+    0.584. The result suggests that the available signals contain useful
+    directional information, but the lower unseen-client performance supports
+    using the workflow as human-reviewed decision-support rather than an
+    automated content-refresh system.
+</p>
 
 <p>
 This project evaluates whether structured content and search-performance
@@ -115,6 +130,15 @@ decision system.
 </p>
 
 <h2>1. Problem Framing</h2>
+<p>
+For a content team, the practical problem is not simply predicting a trend:
+it is deciding where limited review time should be spent. When many pages
+show different combinations of search demand, ranking position, CTR,
+content age, and update history, manually deciding what to investigate first
+can become difficult. This project evaluates whether those structured
+signals can help prioritize potential content-refresh opportunities for
+human review while keeping the final editorial decision with the reviewer.
+</p>
 
 <p>
 The goal is to prioritize content observations that may warrant human
